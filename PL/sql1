@@ -1,0 +1,504 @@
+# PL/SQL Functions and Procedures for `BRANCH` Table
+
+## PL/SQL Function
+
+A PL/SQL function is a named PL/SQL block that can take input parameters, perform some operations, and return a single value.
+
+### Examples:
+
+#### Function Without Parameters
+
+**Example: Get the Total Number of Branches**
+```sql
+CREATE OR REPLACE FUNCTION get_total_branches
+    RETURN NUMBER
+IS
+    v_total_branches NUMBER;
+BEGIN
+    -- Query the database to count the number of branches
+    SELECT COUNT(*) INTO v_total_branches
+    FROM BRANCH;
+
+    -- Return the result
+    RETURN v_total_branches;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Handle any exceptions gracefully
+        RETURN 0; -- Return 0 if any error occurs
+END get_total_branches;
+/
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(GET_TOTAL_BRANCHES);
+END;
+/
+```
+
+#### Simple Function: A function that accepts parameters, processes them, and returns a value.
+
+**Example: Getting the branch details by branch id**
+```sql
+CREATE OR REPLACE FUNCTION get_branch_details(p_branch_id IN NUMBER)
+    RETURN VARCHAR2
+IS
+    v_branch_details VARCHAR2(100);
+BEGIN
+    SELECT BRANCH_NAME || ', ' || BRANCH_DOOR_NUMBER || ', ' || BRANCH_STREET || ', ' || BRANCH_CITY || ', ' || BRANCH_PINCODE 
+    INTO v_branch_details
+    FROM BRANCH
+    WHERE BRANCH_ID = p_branch_id;
+
+    RETURN v_branch_details;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 'No branch found';
+    WHEN OTHERS THEN
+        RETURN 'Error occurred';
+END get_branch_details;
+/
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(GET_BRANCH_DETAILS(101));
+END;
+/
+```
+
+#### Function with Multiple Parameters
+
+**Example: Return the number of branches in the given city**
+```sql
+CREATE OR REPLACE FUNCTION get_branch_count_by_city (
+    p_city_name IN VARCHAR2
+) RETURN NUMBER
+IS
+    v_count NUMBER;
+BEGIN
+    -- Count the number of branches in the given city
+    SELECT COUNT(*) INTO v_count
+    FROM BRANCH
+    WHERE BRANCH_CITY = p_city_name;
+
+    -- Return the count
+    RETURN v_count;
+END get_branch_count_by_city;
+/
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(GET_BRANCH_COUNT_BY_CITY('SIVAKASI'));
+END;
+/
+```
+
+#### Function to Return More Than One Value
+
+**Example: PL/SQL Function to Return a Record (Row)**
+```sql
+CREATE OR REPLACE FUNCTION get_branch_record (
+    p_branch_id IN NUMBER   -- Input: Branch ID
+) RETURN BRANCH%ROWTYPE
+IS
+    v_branch BRANCH%ROWTYPE;   -- Declare a variable of type BRANCH%ROWTYPE to store the record
+BEGIN
+    -- Retrieve the record from the BRANCH table based on the BRANCH_ID
+    SELECT * INTO v_branch
+    FROM BRANCH
+    WHERE BRANCH_ID = p_branch_id;
+
+    -- Return the record
+    RETURN v_branch;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        -- Handle the case where no record is found
+        RETURN NULL;  -- Return NULL if no record is found
+    WHEN OTHERS THEN
+        -- Handle other errors
+        RETURN NULL;
+END get_branch_record;
+/
+
+DECLARE
+    v_branch_record BRANCH%ROWTYPE;  -- Variable to hold the branch record
+BEGIN
+    -- Call the function to get the record for BRANCH_ID = 101
+    v_branch_record := GET_BRANCH_RECORD(101);
+
+    -- Check if a record was returned (not NULL)
+    IF v_branch_record.BRANCH_ID IS NOT NULL THEN
+        DBMS_OUTPUT.PUT_LINE('Branch ID: ' || v_branch_record.BRANCH_ID);
+        DBMS_OUTPUT.PUT_LINE('Branch Name: ' || v_branch_record.BRANCH_NAME);
+        DBMS_OUTPUT.PUT_LINE('Branch Door Number: ' || v_branch_record.BRANCH_DOOR_NUMBER);
+        DBMS_OUTPUT.PUT_LINE('Branch Street: ' || v_branch_record.BRANCH_STREET);
+        DBMS_OUTPUT.PUT_LINE('Branch City: ' || v_branch_record.BRANCH_CITY);
+        DBMS_OUTPUT.PUT_LINE('Branch Pincode: ' || v_branch_record.BRANCH_PINCODE);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('No record found for the given branch ID.');
+    END IF;
+END;
+/
+```
+
+#### Return Table in PL/SQL Function Using Cursor
+
+```sql
+CREATE OR REPLACE FUNCTION get_branch_ref_cursor
+    RETURN SYS_REFCURSOR
+IS
+    v_cursor SYS_REFCURSOR;  -- Declare a variable to hold the ref cursor
+BEGIN
+    -- Open the cursor to select data from the BRANCH table
+    OPEN v_cursor FOR
+        SELECT * FROM BRANCH;
+
+    -- Return the cursor
+    RETURN v_cursor;
+END get_branch_ref_cursor;
+/
+
+DECLARE
+    -- Declare a ref cursor variable
+    v_cursor SYS_REFCURSOR;
+    v_branch_id BRANCH.BRANCH_ID%TYPE;
+    v_branch_name BRANCH.BRANCH_NAME%TYPE;
+    v_branch_door_number BRANCH.BRANCH_DOOR_NUMBER%TYPE;
+    v_branch_street BRANCH.BRANCH_STREET%TYPE;
+    v_branch_city BRANCH.BRANCH_CITY%TYPE;
+    v_branch_pincode BRANCH.BRANCH_PINCODE%TYPE;
+BEGIN
+    -- Call the function to get the ref cursor
+    v_cursor := get_branch_ref_cursor;
+
+    -- Fetch and display rows one by one
+    LOOP
+        FETCH v_cursor INTO v_branch_id, v_branch_name, v_branch_door_number, v_branch_street, v_branch_city, v_branch_pincode;
+        EXIT WHEN v_cursor%NOTFOUND;  -- Exit when no more rows are available
+
+        -- Output the values using DBMS_OUTPUT
+        DBMS_OUTPUT.PUT_LINE('Branch ID: ' || v_branch_id);
+        DBMS_OUTPUT.PUT_LINE('Branch Name: ' || v_branch_name);
+        DBMS_OUTPUT.PUT_LINE('Branch Door Number: ' || v_branch_door_number);
+        DBMS_OUTPUT.PUT_LINE('Branch Street: ' || v_branch_street);
+        DBMS_OUTPUT.PUT_LINE('Branch City: ' || v_branch_city);
+        DBMS_OUTPUT.PUT_LINE('Branch Pincode: ' || v_branch_pincode);
+        DBMS_OUTPUT.PUT_LINE('----------------------');
+    END LOOP;
+
+    -- Close the cursor
+    CLOSE v_cursor;
+END;
+/
+```
+
+## PL/SQL Procedure
+
+### Simple Procedure - No Parameter
+
+**Example: To Insert Row into Branch Table**
+```sql
+CREATE OR REPLACE PROCEDURE simple_branch_proc
+IS
+BEGIN
+    -- Insert a row into the BRANCH table
+    INSERT INTO BRANCH (BRANCH_ID, BRANCH_NAME, BRANCH_DOOR_NUMBER, BRANCH_STREET, BRANCH_CITY, BRANCH_PINCODE)
+    VALUES (105, 'NEWBRANCH', '12/34', 'NEW ST', 'NEWCITY', '123456');
+    COMMIT;
+END simple_branch_proc;
+/
+
+EXEC simple_branch_proc;
+```
+
+### Procedure with IN Parameters
+
+**Example: Procedure with IN Parameters**
+```sql
+CREATE OR REPLACE PROCEDURE branch_proc_with_in_param (
+    p_branch_id IN NUMBER,           -- Input: Branch ID
+    p_branch_name IN VARCHAR2,       -- Input: Branch Name
+    p_branch_door_number IN VARCHAR2,-- Input: Branch Door Number
+    p_branch_street IN VARCHAR2,     -- Input: Branch Street
+    p_branch_city IN VARCHAR2,       -- Input: Branch City
+    p_branch_pincode IN VARCHAR2     -- Input: Branch Pincode
+)
+IS
+BEGIN
+    -- Insert a row into the BRANCH table with provided values
+    INSERT INTO BRANCH (BRANCH_ID, BRANCH_NAME, BRANCH_DOOR_NUMBER, BRANCH_STREET, BRANCH_CITY, BRANCH_PINCODE)
+    VALUES (p_branch_id, p_branch_name, p_branch_door_number, p_branch_street, p_branch_city, p_branch_pincode);
+    COMMIT;
+END branch_proc_with_in_param;
+/
+
+EXEC branch_proc_with_in_param(106, 'NEWBRANCH2', '34/56', 'OLD ST', 'OLDCITY', '654321');
+```
+
+### Procedure with OUT Parameters
+
+**Example: Procedure with OUT Parameters**
+```sql
+CREATE OR REPLACE PROCEDURE branch_proc_with_out_param (
+    p_branch_id IN NUMBER,          -- Input: Branch ID
+    p_branch_name OUT VARCHAR2,     -- Output: Branch Name
+    p_branch_city OUT VARCHAR2      -- Output: Branch City
+)
+IS
+BEGIN
+    -- Retrieve the branch name and city for the given branch id
+    SELECT BRANCH_NAME, BRANCH_CITY INTO p_branch_name, p_branch_city
+    FROM BRANCH
+    WHERE BRANCH_ID = p_branch_id;
+END branch_proc_with_out_param;
+/
+
+DECLARE
+    v_branch_name VARCHAR2(15);
+    v_branch_city VARCHAR2(15);
+BEGIN
+    -- Call the procedure to retrieve branch name and city
+    branch_proc_with_out_param(101, v_branch_name, v_branch_city);
+    DBMS_OUTPUT.PUT_LINE('Branch Name: ' || v_branch_name);
+    DBMS_OUTPUT.PUT_LINE('Branch City: ' || v_branch_city);
+END;
+/
+```
+
+### Procedure with IN OUT Parameters
+
+**Example: Procedure with IN OUT Parameters**
+```sql
+CREATE OR REPLACE PROCEDURE branch_proc_with_in_out_param (
+    p_branch_id IN OUT NUMBER,      -- Input/Output: Branch ID
+    p_branch_pincode IN OUT VARCHAR2-- Input/Output: Branch Pincode
+)
+IS
+BEGIN
+    -- Modify the branch pincode
+    UPDATE BRANCH
+    SET BRANCH_PINCODE = p_branch_pincode
+    WHERE BRANCH_ID = p_branch_id;
+
+    -- Return the updated pincode
+    SELECT BRANCH_PINCODE INTO p_branch_pincode
+    FROM BRANCH
+    WHERE BRANCH_ID = p_branch_id;
+END branch_proc_with_in_out_param;
+/
+
+DECLARE
+    v_branch_id NUMBER := 101;
+    v_branch_pincode VARCHAR2(8) := '987654';
+BEGIN
+    -- Call the procedure to update and return pincode
+    branch_proc_with_in_out_param(v_branch_id, v_branch_pincode);
+    DBMS_OUTPUT.PUT_LINE('Updated Pincode: ' || v_branch_pincode);
+END;
+/
+```
+
+### Procedure Returning a REF CURSOR
+
+**Example: Procedure Returning a REF CURSOR**
+```sql
+CREATE OR REPLACE PROCEDURE branch_proc_with_ref_cursor (
+    p_cursor OUT SYS_REFCURSOR   -- Output: REF CURSOR
+)
+IS
+BEGIN
+    -- Open a cursor for the SELECT query
+    OPEN p_cursor FOR
+        SELECT * FROM BRANCH;
+END branch_proc_with_ref_cursor;
+/
+
+DECLARE
+    v_cursor SYS_REFCURSOR;
+    v_branch_id BRANCH.BRANCH_ID%TYPE;
+    v_branch_name BRANCH.BRANCH_NAME%TYPE;
+    v_branch_door_number BRANCH.BRANCH_DOOR_NUMBER%TYPE;
+    v_branch_street BRANCH.BRANCH_STREET%TYPE;
+    v_branch_city BRANCH.BRANCH_CITY%TYPE;
+    v_branch_pincode BRANCH.BRANCH_PINCODE%TYPE;
+BEGIN
+    -- Call the procedure to get the REF CURSOR
+    branch_proc_with_ref_cursor(v_cursor);
+
+    -- Fetch and display the rows
+    LOOP
+        FETCH v_cursor INTO v_branch_id, v_branch_name, v_branch_door_number, v_branch_street, v_branch_city, v_branch_pincode;
+        EXIT WHEN v_cursor%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE('Branch ID: ' || v_branch_id);
+        DBMS_OUTPUT.PUT_LINE('Branch Name: ' || v_branch_name);
+        DBMS_OUTPUT.PUT_LINE('Branch Door Number: ' || v_branch_door_number);
+        DBMS_OUTPUT.PUT_LINE('Branch Street: ' || v_branch_street);
+        DBMS_OUTPUT.PUT_LINE('Branch City: ' || v_branch_city);
+        DBMS_OUTPUT.PUT_LINE('Branch Pincode: ' || v_branch_pincode);
+        DBMS_OUTPUT.PUT_LINE('----------------------');
+    END LOOP;
+
+    -- Close the cursor
+    CLOSE v_cursor;
+END;
+/
+```
+
+### Procedure with Exception Handling
+
+**Example: Procedure with Exception Handling**
+```sql
+CREATE OR REPLACE PROCEDURE branch_proc_with_exception_handling (
+    p_branch_id IN NUMBER,
+    p_branch_name IN VARCHAR2,
+    p_branch_door_number IN VARCHAR2,
+    p_branch_street IN VARCHAR2,
+    p_branch_city IN VARCHAR2,
+    p_branch_pincode IN VARCHAR2
+)
+IS
+BEGIN
+    -- Attempt to insert into BRANCH table
+    INSERT INTO BRANCH (BRANCH_ID, BRANCH_NAME, BRANCH_DOOR_NUMBER, BRANCH_STREET, BRANCH_CITY, BRANCH_PINCODE)
+    VALUES (p_branch_id, p_branch_name, p_branch_door_number, p_branch_street, p_branch_city, p_branch_pincode);
+    COMMIT;
+
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Duplicate branch ID.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END branch_proc_with_exception_handling;
+/
+
+EXEC branch_proc_with_exception_handling(101, 'SRIVI', '1/4', 'MARI ST', 'SRIVILLIPUTHUR', '650009');
+```
+
+--------------------------------------------------------------------------------------------------------------------------
+
+
+
+Below are a few more PL/SQL functions for the `BRANCH` table, covering various scenarios such as getting branches by city, updating branch details, and deleting a branch by ID.
+
+```sql
+-- Function to get a list of branch names in a given city
+CREATE OR REPLACE FUNCTION get_branch_names_by_city(p_city_name IN VARCHAR2)
+    RETURN SYS_REFCURSOR
+IS
+    v_cursor SYS_REFCURSOR;  -- Declare a variable to hold the ref cursor
+BEGIN
+    -- Open the cursor to select branch names from the BRANCH table for the given city
+    OPEN v_cursor FOR
+        SELECT BRANCH_NAME FROM BRANCH
+        WHERE BRANCH_CITY = p_city_name;
+
+    -- Return the cursor
+    RETURN v_cursor;
+END get_branch_names_by_city;
+/
+
+DECLARE
+    v_cursor SYS_REFCURSOR;
+    v_branch_name BRANCH.BRANCH_NAME%TYPE;
+BEGIN
+    -- Call the function to get the ref cursor for branches in 'SIVAKASI'
+    v_cursor := get_branch_names_by_city('SIVAKASI');
+
+    -- Fetch and display branch names one by one
+    LOOP
+        FETCH v_cursor INTO v_branch_name;
+        EXIT WHEN v_cursor%NOTFOUND;  -- Exit when no more rows are available
+        DBMS_OUTPUT.PUT_LINE('Branch Name: ' || v_branch_name);
+    END LOOP;
+
+    -- Close the cursor
+    CLOSE v_cursor;
+END;
+/
+```
+
+```sql
+-- Function to update the branch street and pincode based on branch ID
+CREATE OR REPLACE FUNCTION update_branch_details(
+    p_branch_id IN NUMBER,
+    p_new_street IN VARCHAR2,
+    p_new_pincode IN VARCHAR2
+) RETURN VARCHAR2
+IS
+BEGIN
+    -- Update the branch details
+    UPDATE BRANCH
+    SET BRANCH_STREET = p_new_street,
+        BRANCH_PINCODE = p_new_pincode
+    WHERE BRANCH_ID = p_branch_id;
+
+    IF SQL%ROWCOUNT = 0 THEN
+        RETURN 'No branch found with the given ID';
+    ELSE
+        RETURN 'Branch details updated successfully';
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN 'Error occurred while updating branch details';
+END update_branch_details;
+/
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(update_branch_details(102, 'NEW STREET', '123456'));
+END;
+/
+```
+
+```sql
+-- Function to delete a branch by branch ID
+CREATE OR REPLACE FUNCTION delete_branch_by_id(p_branch_id IN NUMBER)
+    RETURN VARCHAR2
+IS
+BEGIN
+    -- Delete the branch
+    DELETE FROM BRANCH
+    WHERE BRANCH_ID = p_branch_id;
+
+    IF SQL%ROWCOUNT = 0 THEN
+        RETURN 'No branch found with the given ID';
+    ELSE
+        RETURN 'Branch deleted successfully';
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN 'Error occurred while deleting branch';
+END delete_branch_by_id;
+/
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(delete_branch_by_id(104));
+END;
+/
+```
+
+```sql
+-- Function to get the total number of branches in a given city
+CREATE OR REPLACE FUNCTION get_total_branches_by_city(p_city_name IN VARCHAR2)
+    RETURN NUMBER
+IS
+    v_total_branches NUMBER;
+BEGIN
+    -- Query the database to count the number of branches in the given city
+    SELECT COUNT(*) INTO v_total_branches
+    FROM BRANCH
+    WHERE BRANCH_CITY = p_city_name;
+
+    -- Return the result
+    RETURN v_total_branches;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Handle any exceptions gracefully
+        RETURN 0; -- Return 0 if any error occurs
+END get_total_branches_by_city;
+/
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('Total branches in SIVAKASI: ' || get_total_branches_by_city('SIVAKASI'));
+END;
+/
+```
+
+These additional functions should help cover a wide range of operations that can be performed on the `BRANCH` table.
+
+----------------------------
