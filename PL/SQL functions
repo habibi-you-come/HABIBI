@@ -1,0 +1,557 @@
+Based on the structure of the `supplier` table and the provided data, here are the equivalent PL/SQL functions and procedures for the `supplier` table:
+
+### Function to Get Total Number of Suppliers
+1)This function returns the total number of suppliers.
+```sql
+CREATE OR REPLACE FUNCTION get_total_suppliers
+    RETURN NUMBER
+IS
+    v_total_suppliers NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_total_suppliers
+    FROM supplier;
+
+    RETURN v_total_suppliers;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN 0;
+END get_total_suppliers;
+/
+```
+
+### Function to Get Supplier Name by ID
+2)This function accepts a supplier ID and returns the supplier's name.
+```sql
+CREATE OR REPLACE FUNCTION get_supplier_name(p_sup_id IN NUMBER)
+    RETURN VARCHAR2
+IS
+    v_sup_name VARCHAR2(15);
+BEGIN
+    SELECT SUP_NAME INTO v_sup_name
+    FROM supplier
+    WHERE SUP_ID = p_sup_id;
+
+    RETURN v_sup_name;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 'Not Found';
+    WHEN OTHERS THEN
+        RETURN NULL;
+END get_supplier_name;
+/
+```
+
+### Function to Get Suppliers by City
+3)This function accepts a city name and returns the count of suppliers in that city.
+```sql
+CREATE OR REPLACE FUNCTION get_suppliers_by_city(p_city IN VARCHAR2)
+    RETURN NUMBER
+IS
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_count
+    FROM supplier
+    WHERE SUP_CITY = p_city;
+
+    RETURN v_count;
+END get_suppliers_by_city;
+/
+```
+
+### Function to Return a Supplier Record
+4)This function accepts a supplier ID and returns the corresponding supplier record.
+```sql
+CREATE OR REPLACE FUNCTION get_supplier_record(p_sup_id IN NUMBER)
+    RETURN supplier%ROWTYPE
+IS
+    v_supplier supplier%ROWTYPE;
+BEGIN
+    SELECT * INTO v_supplier
+    FROM supplier
+    WHERE SUP_ID = p_sup_id;
+
+    RETURN v_supplier;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN NULL;
+    WHEN OTHERS THEN
+        RETURN NULL;
+END get_supplier_record;
+/
+```
+
+### Function to Return All Suppliers Using a Cursor
+5)This function returns a cursor with all suppliers.
+```sql
+CREATE OR REPLACE FUNCTION get_supplier_ref_cursor
+    RETURN SYS_REFCURSOR
+IS
+    v_cursor SYS_REFCURSOR;
+BEGIN
+    OPEN v_cursor FOR
+        SELECT * FROM supplier;
+
+    RETURN v_cursor;
+END get_supplier_ref_cursor;
+/
+```
+
+### Procedure to Insert a Supplier
+6)This procedure inserts a new supplier into the table.
+```sql
+CREATE OR REPLACE PROCEDURE insert_supplier (
+    p_sup_id IN NUMBER,
+    p_sup_name IN VARCHAR2,
+    p_sup_doorno IN VARCHAR2,
+    p_sup_street IN VARCHAR2,
+    p_sup_city IN VARCHAR2,
+    p_sup_pincode IN VARCHAR2,
+    p_regular IN CHAR,
+    p_seasonal IN CHAR
+)
+IS
+BEGIN
+    INSERT INTO supplier (SUP_ID, SUP_NAME, SUP_DOORNO, SUP_STREET, SUP_CITY, SUP_PINCODE, REGULAR, SEASONAL)
+    VALUES (p_sup_id, p_sup_name, p_sup_doorno, p_sup_street, p_sup_city, p_sup_pincode, p_regular, p_seasonal);
+    COMMIT;
+END insert_supplier;
+/
+```
+
+### Procedure to Get Supplier Balance (Example with OUT Parameter)
+7)This procedure retrieves the balance for a given supplier ID (assuming there's a balance column in a related table, for illustration).
+```sql
+CREATE OR REPLACE PROCEDURE get_supplier_balance (
+    p_sup_id IN NUMBER,
+    p_balance OUT NUMBER
+)
+IS
+BEGIN
+    -- Assuming there's a balance column in the supplier table or a related table
+    SELECT BALANCE INTO p_balance
+    FROM supplier
+    WHERE SUP_ID = p_sup_id;
+END get_supplier_balance;
+/
+```
+
+### Procedure to Update Supplier Details (IN OUT Parameters)
+8)This procedure updates supplier details and returns the updated values.
+```sql
+CREATE OR REPLACE PROCEDURE update_supplier_details (
+    p_sup_id IN OUT NUMBER,
+    p_sup_name IN OUT VARCHAR2,
+    p_sup_city IN OUT VARCHAR2
+)
+IS
+BEGIN
+    UPDATE supplier
+    SET SUP_NAME = p_sup_name, SUP_CITY = p_sup_city
+    WHERE SUP_ID = p_sup_id;
+
+    SELECT SUP_NAME, SUP_CITY INTO p_sup_name, p_sup_city
+    FROM supplier
+    WHERE SUP_ID = p_sup_id;
+END update_supplier_details;
+/
+```
+
+### Procedure to Handle Exceptions
+9)This procedure handles exceptions during the insertion of a supplier.
+```sql
+CREATE OR REPLACE PROCEDURE insert_supplier_with_exception_handling (
+    p_sup_id IN NUMBER,
+    p_sup_name IN VARCHAR2
+)
+IS
+BEGIN
+    INSERT INTO supplier (SUP_ID, SUP_NAME)
+    VALUES (p_sup_id, p_sup_name);
+    COMMIT;
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Duplicate supplier ID.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END insert_supplier_with_exception_handling;
+/
+```
+--------------------------------------------------------------------------------------------------------------
+Sure! Here are a few more examples of PL/SQL functions and procedures using the `supplier` table:
+
+### Function to Check if Supplier is Regular
+10)This function takes a supplier ID and returns whether the supplier is regular (`Y`) or not (`N`).
+```sql
+CREATE OR REPLACE FUNCTION is_supplier_regular(p_sup_id IN NUMBER)
+    RETURN CHAR
+IS
+    v_regular CHAR(1);
+BEGIN
+    SELECT REGULAR INTO v_regular
+    FROM supplier
+    WHERE SUP_ID = p_sup_id;
+
+    RETURN v_regular;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 'N';
+    WHEN OTHERS THEN
+        RETURN NULL;
+END is_supplier_regular;
+/
+```
+
+### Function to Get Supplier Count by Status
+11)This function takes the status of suppliers (regular or seasonal) and returns the count of suppliers with that status.
+```sql
+CREATE OR REPLACE FUNCTION get_supplier_count_by_status(p_status IN CHAR)
+    RETURN NUMBER
+IS
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_count
+    FROM supplier
+    WHERE REGULAR = p_status OR SEASONAL = p_status;
+
+    RETURN v_count;
+END get_supplier_count_by_status;
+/
+```
+
+### Procedure to Update Supplier Address
+12)This procedure updates the address of a supplier based on the supplier ID.
+```sql
+CREATE OR REPLACE PROCEDURE update_supplier_address (
+    p_sup_id IN NUMBER,
+    p_doorno IN VARCHAR2,
+    p_street IN VARCHAR2,
+    p_city IN VARCHAR2,
+    p_pincode IN VARCHAR2
+)
+IS
+BEGIN
+    UPDATE supplier
+    SET SUP_DOORNO = p_doorno,
+        SUP_STREET = p_street,
+        SUP_CITY = p_city,
+        SUP_PINCODE = p_pincode
+    WHERE SUP_ID = p_sup_id;
+
+    COMMIT;
+END update_supplier_address;
+/
+```
+
+### Procedure to Delete Supplier
+13)This procedure deletes a supplier based on the supplier ID.
+```sql
+CREATE OR REPLACE PROCEDURE delete_supplier(p_sup_id IN NUMBER)
+IS
+BEGIN
+    DELETE FROM supplier
+    WHERE SUP_ID = p_sup_id;
+
+    COMMIT;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Supplier not found.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END delete_supplier;
+/
+```
+
+### Function to Get Supplier Details as a String
+14)This function returns the details of a supplier in a single concatenated string.
+```sql
+CREATE OR REPLACE FUNCTION get_supplier_details(p_sup_id IN NUMBER)
+    RETURN VARCHAR2
+IS
+    v_details VARCHAR2(1000);
+BEGIN
+    SELECT SUP_ID || ' - ' || SUP_NAME || ', ' || SUP_DOORNO || ', ' || SUP_STREET || ', ' || SUP_CITY || ', ' || SUP_PINCODE
+    INTO v_details
+    FROM supplier
+    WHERE SUP_ID = p_sup_id;
+
+    RETURN v_details;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 'Supplier not found';
+    WHEN OTHERS THEN
+        RETURN NULL;
+END get_supplier_details;
+/
+```
+
+### Procedure to Insert Multiple Suppliers
+15)This procedure inserts multiple suppliers using a loop.
+```sql
+CREATE OR REPLACE PROCEDURE insert_multiple_suppliers
+IS
+BEGIN
+    FOR i IN 1..5 LOOP
+        INSERT INTO supplier (SUP_ID, SUP_NAME, SUP_DOORNO, SUP_STREET, SUP_CITY, SUP_PINCODE, REGULAR, SEASONAL)
+        VALUES (400 + i, 'Supplier' || i, 'Door' || i, 'Street' || i, 'City' || i, '0000' || i, 'Y', 'N');
+    END LOOP;
+
+    COMMIT;
+END insert_multiple_suppliers;
+/
+```
+
+These examples demonstrate additional functionalities that can be implemented using PL/SQL functions and procedures for the `supplier` table.
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+Certainly! Here are five more PL/SQL functions and procedures for the `supplier` table:
+
+### Function to Get Supplier City by ID
+This function takes a supplier ID and returns the city where the supplier is located.
+```sql
+CREATE OR REPLACE FUNCTION get_supplier_city(p_sup_id IN NUMBER)
+    RETURN VARCHAR2
+IS
+    v_sup_city VARCHAR2(15);
+BEGIN
+    SELECT SUP_CITY INTO v_sup_city
+    FROM supplier
+    WHERE SUP_ID = p_sup_id;
+
+    RETURN v_sup_city;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 'Not Found';
+    WHEN OTHERS THEN
+        RETURN NULL;
+END get_supplier_city;
+/
+```
+
+### Procedure to Update Supplier Status
+This procedure updates the status of a supplier (regular or seasonal) based on the supplier ID.
+```sql
+CREATE OR REPLACE PROCEDURE update_supplier_status (
+    p_sup_id IN NUMBER,
+    p_regular IN CHAR,
+    p_seasonal IN CHAR
+)
+IS
+BEGIN
+    UPDATE supplier
+    SET REGULAR = p_regular,
+        SEASONAL = p_seasonal
+    WHERE SUP_ID = p_sup_id;
+
+    COMMIT;
+END update_supplier_status;
+/
+```
+
+### Function to Get Supplier by Name
+This function takes a supplier name and returns the supplier ID.
+```sql
+CREATE OR REPLACE FUNCTION get_supplier_id_by_name(p_sup_name IN VARCHAR2)
+    RETURN NUMBER
+IS
+    v_sup_id NUMBER;
+BEGIN
+    SELECT SUP_ID INTO v_sup_id
+    FROM supplier
+    WHERE SUP_NAME = p_sup_name;
+
+    RETURN v_sup_id;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN -1;
+    WHEN OTHERS THEN
+        RETURN NULL;
+END get_supplier_id_by_name;
+/
+```
+
+### Procedure to Delete Suppliers by City
+This procedure deletes all suppliers in a given city.
+```sql
+CREATE OR REPLACE PROCEDURE delete_suppliers_by_city(p_city IN VARCHAR2)
+IS
+BEGIN
+    DELETE FROM supplier
+    WHERE SUP_CITY = p_city;
+
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END delete_suppliers_by_city;
+/
+```
+
+### Function to Get Supplier Details as JSON
+This function returns the details of a supplier in JSON format.
+```sql
+CREATE OR REPLACE FUNCTION get_supplier_details_json(p_sup_id IN NUMBER)
+    RETURN CLOB
+IS
+    v_json CLOB;
+BEGIN
+    SELECT '{"SUP_ID":' || SUP_ID || ',"SUP_NAME":"' || SUP_NAME || '","SUP_DOORNO":"' || SUP_DOORNO || '","SUP_STREET":"' || SUP_STREET || '","SUP_CITY":"' || SUP_CITY || '","SUP_PINCODE":"' || SUP_PINCODE || '","REGULAR":"' || REGULAR || '","SEASONAL":"' || SEASONAL || '"}'
+    INTO v_json
+    FROM supplier
+    WHERE SUP_ID = p_sup_id;
+
+    RETURN v_json;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN '{"error":"Supplier not found"}';
+    WHEN OTHERS THEN
+        RETURN '{"error":"An error occurred"}';
+END get_supplier_details_json;
+/
+```
+
+These additional examples cover more functionalities that can be implemented using PL/SQL functions and procedures for the `supplier` table.
+
+
+-----------------------------------------------------------------------------------------------------------------------------
+
+Sure! Here are five more PL/SQL procedures for the `supplier` table:
+
+### Procedure to Get Supplier Details by ID
+This procedure retrieves the details of a supplier based on the supplier ID and prints the details.
+```sql
+CREATE OR REPLACE PROCEDURE get_supplier_details_by_id (p_sup_id IN NUMBER)
+IS
+    v_sup_name VARCHAR2(15);
+    v_sup_doorno VARCHAR2(20);
+    v_sup_street VARCHAR2(20);
+    v_sup_city VARCHAR2(15);
+    v_sup_pincode VARCHAR2(8);
+    v_regular CHAR(1);
+    v_seasonal CHAR(1);
+BEGIN
+    SELECT SUP_NAME, SUP_DOORNO, SUP_STREET, SUP_CITY, SUP_PINCODE, REGULAR, SEASONAL
+    INTO v_sup_name, v_sup_doorno, v_sup_street, v_sup_city, v_sup_pincode, v_regular, v_seasonal
+    FROM supplier
+    WHERE SUP_ID = p_sup_id;
+
+    DBMS_OUTPUT.PUT_LINE('Supplier ID: ' || p_sup_id);
+    DBMS_OUTPUT.PUT_LINE('Name: ' || v_sup_name);
+    DBMS_OUTPUT.PUT_LINE('Door No: ' || v_sup_doorno);
+    DBMS_OUTPUT.PUT_LINE('Street: ' || v_sup_street);
+    DBMS_OUTPUT.PUT_LINE('City: ' || v_sup_city);
+    DBMS_OUTPUT.PUT_LINE('Pincode: ' || v_sup_pincode);
+    DBMS_OUTPUT.PUT_LINE('Regular: ' || v_regular);
+    DBMS_OUTPUT.PUT_LINE('Seasonal: ' || v_seasonal);
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Supplier not found');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END get_supplier_details_by_id;
+/
+```
+
+### Procedure to Update Supplier Name by ID
+This procedure updates the name of a supplier based on the supplier ID.
+```sql
+CREATE OR REPLACE PROCEDURE update_supplier_name (p_sup_id IN NUMBER, p_sup_name IN VARCHAR2)
+IS
+BEGIN
+    UPDATE supplier
+    SET SUP_NAME = p_sup_name
+    WHERE SUP_ID = p_sup_id;
+
+    COMMIT;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Supplier not found');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END update_supplier_name;
+/
+```
+
+### Procedure to Get All Suppliers in a City
+This procedure retrieves and prints the details of all suppliers in a given city.
+```sql
+CREATE OR REPLACE PROCEDURE get_suppliers_in_city (p_city IN VARCHAR2)
+IS
+    CURSOR cur_suppliers IS
+        SELECT SUP_ID, SUP_NAME, SUP_DOORNO, SUP_STREET, SUP_CITY, SUP_PINCODE, REGULAR, SEASONAL
+        FROM supplier
+        WHERE SUP_CITY = p_city;
+    v_supplier cur_suppliers%ROWTYPE;
+BEGIN
+    OPEN cur_suppliers;
+    LOOP
+        FETCH cur_suppliers INTO v_supplier;
+        EXIT WHEN cur_suppliers%NOTFOUND;
+
+        DBMS_OUTPUT.PUT_LINE('Supplier ID: ' || v_supplier.SUP_ID);
+        DBMS_OUTPUT.PUT_LINE('Name: ' || v_supplier.SUP_NAME);
+        DBMS_OUTPUT.PUT_LINE('Door No: ' || v_supplier.SUP_DOORNO);
+        DBMS_OUTPUT.PUT_LINE('Street: ' || v_supplier.SUP_STREET);
+        DBMS_OUTPUT.PUT_LINE('City: ' || v_supplier.SUP_CITY);
+        DBMS_OUTPUT.PUT_LINE('Pincode: ' || v_supplier.SUP_PINCODE);
+        DBMS_OUTPUT.PUT_LINE('Regular: ' || v_supplier.REGULAR);
+        DBMS_OUTPUT.PUT_LINE('Seasonal: ' || v_supplier.SEASONAL);
+        DBMS_OUTPUT.PUT_LINE('----------------------');
+    END LOOP;
+    CLOSE cur_suppliers;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END get_suppliers_in_city;
+/
+```
+
+### Procedure to Count Suppliers by Regular Status
+This procedure counts and prints the number of suppliers based on their regular status.
+```sql
+CREATE OR REPLACE PROCEDURE count_suppliers_by_status (p_status IN CHAR)
+IS
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_count
+    FROM supplier
+    WHERE REGULAR = p_status;
+
+    DBMS_OUTPUT.PUT_LINE('Number of suppliers with status ' || p_status || ': ' || v_count);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END count_suppliers_by_status;
+/
+```
+
+### Procedure to Insert a New Supplier
+This procedure inserts a new supplier into the `supplier` table.
+```sql
+CREATE OR REPLACE PROCEDURE insert_new_supplier (
+    p_sup_id IN NUMBER,
+    p_sup_name IN VARCHAR2,
+    p_sup_doorno IN VARCHAR2,
+    p_sup_street IN VARCHAR2,
+    p_sup_city IN VARCHAR2,
+    p_sup_pincode IN VARCHAR2,
+    p_regular IN CHAR,
+    p_seasonal IN CHAR
+)
+IS
+BEGIN
+    INSERT INTO supplier (SUP_ID, SUP_NAME, SUP_DOORNO, SUP_STREET, SUP_CITY, SUP_PINCODE, REGULAR, SEASONAL)
+    VALUES (p_sup_id, p_sup_name, p_sup_doorno, p_sup_street, p_sup_city, p_sup_pincode, p_regular, p_seasonal);
+
+    COMMIT;
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Duplicate supplier ID.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END insert_new_supplier;
+/
+```
+
+These additional procedures demonstrate more functionalities that can be implemented using PL/SQL procedures for the `supplier` table.
