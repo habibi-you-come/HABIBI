@@ -1,0 +1,384 @@
+-- Display all records from the supplier table
+SELECT * FROM supplier;
+
+-- Create a procedure to insert a fixed supplier record
+CREATE OR REPLACE PROCEDURE simple_supplier_proc IS
+BEGIN
+    INSERT INTO SUPPLIER (SUP_ID, SUP_NAME, SUP_DOORNO, SUP_STREET, SUP_CITY, SUP_PINCODE, REGULAR, SEASONAL)
+    VALUES (404, 'RAM', '12/34', 'PARK ST', 'CHENNAI', '600001', 'Y', 'N');
+    COMMIT;
+END simple_supplier_proc;
+
+-- Execute the simple_supplier_proc procedure
+EXEC SIMPLE_SUPPLIER_PROC;
+
+-- Display all records from the supplier table
+SELECT * FROM supplier;
+
+-- Create a procedure to insert a supplier record with parameters
+CREATE OR REPLACE PROCEDURE insert_supplier (
+    p_sup_id IN NUMBER,
+    p_sup_name IN VARCHAR2,
+    p_sup_doorno IN VARCHAR2,
+    p_sup_street IN VARCHAR2,
+    p_sup_city IN VARCHAR2,
+    p_sup_pincode IN VARCHAR2,
+    p_regular IN CHAR,
+    p_seasonal IN CHAR
+) IS
+BEGIN
+    INSERT INTO supplier (SUP_ID, SUP_NAME, SUP_DOORNO, SUP_STREET, SUP_CITY, SUP_PINCODE, REGULAR, SEASONAL)
+    VALUES (p_sup_id, p_sup_name, p_sup_doorno, p_sup_street, p_sup_city, p_sup_pincode, p_regular, p_seasonal);
+    COMMIT;
+END insert_supplier;
+
+-- Execute the insert_supplier procedure with parameters
+EXEC insert_supplier(405, 'ARUN', '45A', 'GANDHI ST', 'COIMBATORE', '641001', 'Y', 'N');
+
+-- Display all records from the supplier table
+SELECT * FROM supplier;
+
+-- Create a procedure with output parameters for supplier details
+CREATE OR REPLACE PROCEDURE supplier_with_out_param (
+    p_sup_id IN NUMBER,
+    p_sup_name OUT VARCHAR2,
+    p_regular OUT CHAR,
+    p_seasonal OUT CHAR
+) IS
+BEGIN
+    SELECT SUP_NAME, REGULAR, SEASONAL
+    INTO p_sup_name, p_regular, p_seasonal
+    FROM SUPPLIER
+    WHERE SUP_ID = p_sup_id;
+END supplier_with_out_param;
+
+-- Declare variables and execute the supplier_with_out_param procedure
+DECLARE
+    v_sup_name VARCHAR2(15);
+    v_regular CHAR(1);
+    v_seasonal CHAR(1);
+BEGIN
+    supplier_with_out_param(401, v_sup_name, v_regular, v_seasonal);
+    DBMS_OUTPUT.PUT_LINE('Supplier Name: ' || v_sup_name);
+    DBMS_OUTPUT.PUT_LINE('Regular: ' || v_regular);
+    DBMS_OUTPUT.PUT_LINE('Seasonal: ' || v_seasonal);
+END;
+
+-- Display all records from the supplier table
+SELECT * FROM supplier;
+
+-- Create a procedure with input and output parameters for updating supplier name
+CREATE OR REPLACE PROCEDURE supplier_with_in_out_param (
+    p_sup_id IN OUT NUMBER,
+    p_sup_name IN OUT VARCHAR2
+) IS
+BEGIN
+    UPDATE SUPPLIER SET SUP_NAME = p_sup_name WHERE SUP_ID = p_sup_id;
+    SELECT SUP_NAME INTO p_sup_name FROM SUPPLIER WHERE SUP_ID = p_sup_id;
+END supplier_with_in_out_param;
+
+-- Declare variables and execute the supplier_with_in_out_param procedure
+DECLARE
+    v_sup_id NUMBER := 401;
+    v_sup_name VARCHAR2(15) := 'POTHI';
+BEGIN
+    supplier_with_in_out_param(v_sup_id, v_sup_name);
+    DBMS_OUTPUT.PUT_LINE('Supplier ID: ' || v_sup_id);
+    DBMS_OUTPUT.PUT_LINE('Supplier Name: ' || v_sup_name);
+END;
+
+-- Display all records from the supplier table
+SELECT * FROM supplier;
+
+-- Create a procedure with a ref cursor to retrieve all supplier records
+CREATE OR REPLACE PROCEDURE supplier_with_ref_cursor (
+    p_cursor OUT SYS_REFCURSOR
+) IS
+BEGIN
+    OPEN p_cursor FOR
+    SELECT * FROM SUPPLIER;
+END supplier_with_ref_cursor;
+
+-- Declare a ref cursor and fetch records using the supplier_with_ref_cursor procedure
+DECLARE
+    v_cursor SYS_REFCURSOR;
+    v_sup_id NUMBER;
+    v_sup_name VARCHAR2(15);
+    v_sup_doorno VARCHAR2(20);
+    v_sup_street VARCHAR2(20);
+    v_sup_city VARCHAR2(15);
+    v_sup_pincode VARCHAR2(8);
+    v_regular CHAR(1);
+    v_seasonal CHAR(1);
+BEGIN
+    supplier_with_ref_cursor(v_cursor);
+    LOOP
+        FETCH v_cursor INTO v_sup_id, v_sup_name, v_sup_doorno, v_sup_street, v_sup_city, v_sup_pincode, v_regular, v_seasonal;
+        EXIT WHEN v_cursor%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE('SUP_ID: ' || v_sup_id || ', SUP_NAME: ' || v_sup_name || ', SUP_DOORNO: ' || v_sup_doorno || ', SUP_STREET: ' || v_sup_street || ', SUP_CITY: ' || v_sup_city || ', SUP_PINCODE: ' || v_sup_pincode || ', REGULAR: ' || v_regular || ', SEASONAL: ' || v_seasonal);
+    END LOOP;
+    CLOSE v_cursor;
+END;
+
+-- Create a procedure with exception handling for inserting a supplier record
+CREATE OR REPLACE PROCEDURE supplier_with_exception_handling (
+    p_sup_id IN NUMBER,
+    p_sup_name IN VARCHAR2,
+    p_sup_doorno IN VARCHAR2,
+    p_sup_street IN VARCHAR2,
+    p_sup_city IN VARCHAR2,
+    p_sup_pincode IN VARCHAR2,
+    p_regular IN CHAR,
+    p_seasonal IN CHAR
+) IS
+BEGIN
+    INSERT INTO SUPPLIER (SUP_ID, SUP_NAME, SUP_DOORNO, SUP_STREET, SUP_CITY, SUP_PINCODE, REGULAR, SEASONAL)
+    VALUES (p_sup_id, p_sup_name, p_sup_doorno, p_sup_street, p_sup_city, p_sup_pincode, p_regular, p_seasonal);
+    COMMIT;
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Duplicate supplier ID.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END supplier_with_exception_handling;
+
+-- Execute the supplier_with_exception_handling procedure with a duplicate supplier ID
+BEGIN
+    supplier_with_exception_handling(401, 'AKASH', '1\23', 'MUTHU ST', 'MADURAI', '670001', 'Y', 'N');
+END;
+
+-- Execute the supplier_with_exception_handling procedure with a new supplier ID
+BEGIN
+    supplier_with_exception_handling(406, 'AKASH', '1\43', 'MARUTHU ST', 'MADURAI', '670006', 'N', 'Y');
+END;
+
+-- Display all records from the supplier table
+SELECT * FROM supplier;
+
+-- Create a procedure to insert a fixed branch record
+CREATE OR REPLACE PROCEDURE insert_fixed_branch IS
+BEGIN
+    INSERT INTO BRANCH (BRANCH_ID, BRANCH_NAME, BRANCH_DOOR_NUMBER, BRANCH_STREET, BRANCH_CITY, BRANCH_PINCODE)
+    VALUES (105, 'SIVK', '101/2', 'RAGU ST', 'SIVAKASI', '600001');
+    COMMIT;
+END insert_fixed_branch;
+
+-- Execute the insert_fixed_branch procedure
+EXEC insert_fixed_branch;
+
+-- Display all records from the branch table
+SELECT * FROM BRANCH;
+
+-- Create a procedure to insert a branch record with parameters
+CREATE OR REPLACE PROCEDURE insert_branch (
+    p_branch_id IN NUMBER,
+    p_branch_name IN VARCHAR2,
+    p_branch_door_number IN VARCHAR2,
+    p_branch_street IN VARCHAR2,
+    p_branch_city IN VARCHAR2,
+    p_branch_pincode IN VARCHAR2
+) IS
+BEGIN
+    INSERT INTO BRANCH (BRANCH_ID, BRANCH_NAME, BRANCH_DOOR_NUMBER, BRANCH_STREET, BRANCH_CITY, BRANCH_PINCODE)
+    VALUES (p_branch_id, p_branch_name, p_branch_door_number, p_branch_street, p_branch_city, p_branch_pincode);
+    COMMIT;
+END insert_branch;
+
+-- Execute the insert_branch procedure with parameters
+EXEC insert_branch (106, 'SRIVI','109/3','NAGENDRAN ST','SRIVILLIPUTHUR','650002');
+
+-- Display all records from the branch table
+SELECT * FROM BRANCH;
+
+-- Create a procedure with output parameters for branch details by ID
+CREATE OR REPLACE PROCEDURE get_branch_by_id (
+    p_branch_id IN NUMBER,
+    p_branch_name OUT VARCHAR2,
+    p_branch_door_number OUT VARCHAR2,
+    p_branch_street OUT VARCHAR2,
+    p_branch_city OUT VARCHAR2,
+    p_branch_pincode OUT VARCHAR2
+) IS
+BEGIN
+    SELECT BRANCH_NAME, BRANCH_DOOR_NUMBER, BRANCH_STREET, BRANCH_CITY, BRANCH_PINCODE
+    INTO p_branch_name, p_branch_door_number, p_branch_street, p_branch_city, p_branch_pincode
+    FROM BRANCH
+    WHERE BRANCH_ID = p_branch_id;
+END get_branch_by_id;
+
+-- Declare variables and execute the get_branch_by_id procedure
+DECLARE
+    v_branch_name VARCHAR2(15);
+    v_branch_door_number VARCHAR2(10);
+    v_branch_street VARCHAR2(20);
+    v_branch_city VARCHAR2(15);
+    v_branch_pincode VARCHAR2(8);
+BEGIN
+    get_branch_by_id(101, v_branch_name, v_branch_door_number, v_branch_street, v_branch_city, v_branch_pincode);
+    DBMS_OUTPUT.PUT_LINE('Branch Name: ' || v_branch_name);
+    DBMS_OUTPUT.PUT_LINE('Branch Door Number: ' || v_branch_door_number);
+    DBMS_OUTPUT.PUT_LINE('Branch Street: ' || v_branch_street);
+    DBMS_OUTPUT.PUT_LINE('Branch City: ' || v_branch_city);
+    DBMS_OUTPUT.PUT_LINE('Branch Pincode: ' || v_branch_pincode);
+END;
+
+-- Create a procedure with input and output parameters for updating branch name
+CREATE OR REPLACE PROCEDURE update_branch_name_by_id (
+    p_branch_id IN OUT NUMBER,
+    p_branch_name IN OUT VARCHAR2
+) IS
+BEGIN
+    UPDATE BRANCH SET BRANCH_NAME = p_branch_name WHERE BRANCH_ID = p_branch_id;
+    SELECT BRANCH_NAME INTO p_branch_name FROM BRANCH WHERE BRANCH_ID = p_branch_id;
+END update_branch_name_by_id;
+
+-- Declare variables and execute the update_branch_name_by_id procedure
+DECLARE
+    v_branch_id NUMBER := 102;
+    v_branch_name VARCHAR2(15) := 'SIVI';
+BEGIN
+    update_branch_name_by_id(v_branch_id, v_branch_name);
+    DBMS_OUTPUT.PUT_LINE('Branch ID: ' || v_branch_id);
+    DBMS_OUTPUT.PUT_LINE('Updated Branch Name: ' || v_branch_name);
+END;
+
+-- Display all records from the branch table
+SELECT * FROM BRANCH;
+
+-- Create a procedure with a ref cursor to retrieve all branch records
+CREATE OR REPLACE PROCEDURE get_all_branches (
+    p_cursor OUT SYS_REFCURSOR
+) IS
+BEGIN
+    OPEN p_cursor FOR
+    SELECT * FROM BRANCH;
+END get_all_branches;
+
+-- Declare a ref cursor and fetch records using the get_all_branches procedure
+DECLARE
+    v_cursor SYS_REFCURSOR;
+    v_branch_id NUMBER;
+    v_branch_name VARCHAR2(15);
+    v_branch_door_number VARCHAR2(10);
+    v_branch_street VARCHAR2(20);
+    v_branch_city VARCHAR2(15);
+    v_branch_pincode VARCHAR2(8);
+BEGIN
+    get_all_branches(v_cursor);
+    LOOP
+        FETCH v_cursor INTO v_branch_id, v_branch_name, v_branch_door_number, v_branch_street, v_branch_city, v_branch_pincode;
+        EXIT WHEN v_cursor%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE('BRANCH_ID: ' || v_branch_id);
+        DBMS_OUTPUT.PUT_LINE('BRANCH_NAME: ' || v_branch_name);
+        DBMS_OUTPUT.PUT_LINE('BRANCH_DOOR_NUMBER: ' || v_branch_door_number);
+        DBMS_OUTPUT.PUT_LINE('BRANCH_STREET: ' || v_branch_street);
+        DBMS_OUTPUT.PUT_LINE('BRANCH_CITY: ' || v_branch_city);
+        DBMS_OUTPUT.PUT_LINE('BRANCH_PINCODE: ' || v_branch_pincode);
+        DBMS_OUTPUT.PUT_LINE('-----------------------------------');
+    END LOOP;
+    CLOSE v_cursor;
+END;
+
+-- Create a procedure with exception handling for inserting a branch record
+CREATE OR REPLACE PROCEDURE insert_branch_with_exception (
+    p_branch_id IN NUMBER,
+    p_branch_name IN VARCHAR2,
+    p_branch_door_number IN VARCHAR2,
+    p_branch_street IN VARCHAR2,
+    p_branch_city IN VARCHAR2,
+    p_branch_pincode IN VARCHAR2
+) IS
+BEGIN
+    INSERT INTO BRANCH (BRANCH_ID, BRANCH_NAME, BRANCH_DOOR_NUMBER, BRANCH_STREET, BRANCH_CITY, BRANCH_PINCODE)
+    VALUES (p_branch_id, p_branch_name, p_branch_door_number, p_branch_street, p_branch_city, p_branch_pincode);
+    COMMIT;
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Duplicate branch ID.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END insert_branch_with_exception;
+
+-- Execute the insert_branch_with_exception procedure with a duplicate branch ID
+BEGIN
+    insert_branch_with_exception(106, 'SIVIK', '303', 'WEST ST', 'SIVAKASI', '650001');
+END;
+
+-- Execute the insert_branch_with_exception procedure with a new branch ID
+BEGIN
+    insert_branch_with_exception(107, 'SIVIK', '303', 'WEST ST', 'SIVAKASI', '650001');
+END;
+
+-- Display all records from the branch table
+SELECT * FROM BRANCH;
+
+-- Create a procedure to delete a branch record by ID with exception handling
+CREATE OR REPLACE PROCEDURE del_branch_by_id (
+    p_branch_id IN NUMBER
+) IS
+BEGIN
+    DELETE FROM BRANCH WHERE BRANCH_ID = p_branch_id;
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END del_branch_by_id;
+
+-- Execute the del_branch_by_id procedure with an existing branch ID
+BEGIN
+    del_branch_by_id(104);
+END;
+
+-- Create a procedure to get the count of branches by city
+CREATE OR REPLACE PROCEDURE get_branch_count(
+    p_city IN VARCHAR2,
+    p_branch_count OUT NUMBER
+) IS
+BEGIN
+    SELECT COUNT(*)
+    INTO p_branch_count
+    FROM BRANCH
+    WHERE BRANCH_CITY = p_city;
+END get_branch_count;
+
+-- Declare variables and execute the get_branch_count procedure
+DECLARE
+    v_city VARCHAR2(15) := 'SIVAKASI';
+    v_branch_count NUMBER;
+BEGIN
+    get_branch_count(v_city, v_branch_count);
+    DBMS_OUTPUT.PUT_LINE('Branch Count in ' || v_city || ': ' || v_branch_count);
+END;
+
+-- Declare variables and execute the get_branch_count procedure for another city
+DECLARE
+    v_city VARCHAR2(15) := 'SRIVILLIPUTHUR';
+    v_branch_count NUMBER;
+BEGIN
+    get_branch_count(v_city, v_branch_count);
+    DBMS_OUTPUT.PUT_LINE('Branch Count in ' || v_city || ': ' || v_branch_count);
+END;
+
+-- Create a procedure to get all branches by city using a cursor
+CREATE OR REPLACE PROCEDURE get_branches_by_city (
+    p_city IN VARCHAR2
+) IS
+    CURSOR branch_cursor IS
+        SELECT BRANCH_ID, BRANCH_NAME, BRANCH_DOOR_NUMBER, BRANCH_STREET, BRANCH_PINCODE
+        FROM BRANCH
+        WHERE BRANCH_CITY = p_city;
+BEGIN
+    FOR branch_record IN branch_cursor LOOP
+        DBMS_OUTPUT.PUT_LINE('BRANCH_ID: ' || branch_record.BRANCH_ID);
+        DBMS_OUTPUT.PUT_LINE('BRANCH_NAME: ' || branch_record.BRANCH_NAME);
+        DBMS_OUTPUT.PUT_LINE('BRANCH_DOOR_NUMBER: ' || branch_record.BRANCH_DOOR_NUMBER);
+        DBMS_OUTPUT.PUT_LINE('BRANCH_STREET: ' || branch_record.BRANCH_STREET);
+        DBMS_OUTPUT.PUT_LINE('BRANCH_PINCODE: ' || branch_record.BRANCH_PINCODE);
+        DBMS_OUTPUT.PUT_LINE('-----------------------------------');
+    END LOOP;
+END get_branches_by_city;
+
+-- Execute the get_branches_by_city procedure for a specific city
+BEGIN
+    get_branches_by_city('SIVAKASI');
+END;
