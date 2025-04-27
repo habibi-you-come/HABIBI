@@ -1,0 +1,1106 @@
+week - 12
+
+practise prog ass-q1
+
+MOD = 10**9 + 7
+
+def find_paths(grid, n, m):
+    # Create a DP table
+    dp = [[0] * m for _ in range(n)]
+    
+    # Base case: Starting point
+    dp[0][0] = 1
+    
+    # Fill the DP table
+    for i in range(n):
+        for j in range(m):
+            if grid[i][j] == -1:  # Cell is a dead-end
+                dp[i][j] = 0
+            else:
+                if i > 0:  # Add paths from the top cell
+                    dp[i][j] += dp[i-1][j]
+                if j > 0:  # Add paths from the left cell
+                    dp[i][j] += dp[i][j-1]
+                dp[i][j] %= MOD  # Take modulo at each step to prevent overflow
+    
+    return dp[n-1][m-1]  # Return the number of ways to reach the bottom-right corner
+
+def main():
+    T = int(input())  # Number of test cases
+    results = []
+    for _ in range(T):
+        # Read grid dimensions
+        n, m = map(int, input().split())
+        # Read the grid
+        grid = [list(map(int, input().split())) for _ in range(n)]
+        # Find the number of paths for the current test case
+        results.append(find_paths(grid, n, m))
+    
+    # Print results for all test cases
+    for result in results:
+        print(result)
+
+if __name__ == "__main__":
+    main()
+
+practise prog ass-2
+
+def longest_common_subsequence(s1, s2):
+    n, m = len(s1), len(s2)
+    # Create a DP table with dimensions (n+1) x (m+1)
+    dp = [[0] * (m + 1) for _ in range(n + 1)]
+    
+    # Fill the DP table
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            if s1[i - 1] == s2[j - 1]:  # Characters match
+                dp[i][j] = dp[i - 1][j - 1] + 1
+            else:  # Characters don't match
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+    
+    return dp[n][m]  # The bottom-right cell contains the answer
+
+def main():
+    t = int(input())  # Number of test cases
+    results = []
+    for _ in range(t):
+        s1, s2 = input().split()  # Read two strings
+        # Compute the length of the longest common subsequence
+        results.append(longest_common_subsequence(s1, s2))
+    
+    # Print results for all test cases
+    for result in results:
+        print(result)
+
+if __name__ == "__main__":
+    main()
+
+
+practise prog ass-3
+
+def max_pieces(n, a, b, c):
+    # Create a DP array to store the maximum pieces for each length
+    dp = [-1] * (n + 1)
+    dp[0] = 0  # Base case: 0 length stick can be split into 0 pieces
+
+    # Iterate through each possible stick length
+    for i in range(1, n + 1):
+        if i >= a and dp[i - a] != -1:
+            dp[i] = max(dp[i], dp[i - a] + 1)
+        if i >= b and dp[i - b] != -1:
+            dp[i] = max(dp[i], dp[i - b] + 1)
+        if i >= c and dp[i - c] != -1:
+            dp[i] = max(dp[i], dp[i - c] + 1)
+
+    return dp[n]
+
+def main():
+    # Input
+    n, a, b, c = map(int, input().split())
+    # Compute the maximum number of pieces
+    print(max_pieces(n, a, b, c))
+
+----------------------------------------------------------------------------------------------
+
+week -11
+
+practise prog ass-1
+
+def max_points(n, arr):
+    # Find the maximum value in the array
+    max_val = max(arr)
+    
+    # Create a frequency array to count occurrences of each number
+    freq = [0] * (max_val + 1)
+    for num in arr:
+        freq[num] += 1
+    
+    # Initialize DP array
+    dp = [0] * (max_val + 1)
+    dp[1] = freq[1]  # Base case for the smallest element
+    
+    # Fill the DP table
+    for i in range(2, max_val + 1):
+        dp[i] = max(dp[i - 1], dp[i - 2] + i * freq[i])
+    
+    return dp[max_val]
+
+def main():
+    # Input
+    n = int(input())
+    arr = list(map(int, input().split()))
+    
+    # Compute and print the result
+    print(max_points(n, arr))
+
+if __name__ == "__main__":
+    main()
+
+if __name__ == "__main__":
+    main()
+
+----------------------------------------------------------------------------------------
+week -10
+
+practise prog ass-1
+
+
+def maximize_f(r, b):
+    # Compute the maximum prefix sum for both r and b
+    max_r_prefix = 0
+    max_b_prefix = 0
+    
+    current_r_sum = 0
+    for value in r:
+        current_r_sum += value
+        max_r_prefix = max(max_r_prefix, current_r_sum)
+    
+    current_b_sum = 0
+    for value in b:
+        current_b_sum += value
+        max_b_prefix = max(max_b_prefix, current_b_sum)
+    
+    # The maximum value of f(a) is the sum of the two max prefix sums
+    return max_r_prefix + max_b_prefix
+
+def main():
+    t = int(input())  # Number of test cases
+    results = []
+    
+    for _ in range(t):
+        n = int(input())  # Length of sequence r
+        r = list(map(int, input().split()))  # Sequence r
+        m = int(input())  # Length of sequence b
+        b = list(map(int, input().split()))  # Sequence b
+        
+        # Compute and store the result for the current test case
+        results.append(maximize_f(r, b))
+    
+    # Output all results
+    for result in results:
+        print(result)
+
+if __name__ == "__main__":
+    main()
+
+--------------------------------------------------------------------------------------
+
+week-9
+
+practise prog ass-1
+
+
+from collections import defaultdict, deque
+
+def bipartite_matching(graph, n):
+    """Find the maximum bipartite matching in the graph."""
+    match = [-1] * (n + 1)
+    visited = [False] * (n + 1)
+
+    def bpm(u):
+        for v in graph[u]:
+            if not visited[v]:
+                visited[v] = True
+                if match[v] == -1 or bpm(match[v]):
+                    match[v] = u
+                    return True
+        return False
+
+    # Count the maximum matching
+    max_matching = 0
+    for u in range(1, n + 1):
+        visited = [False] * (n + 1)
+        if bpm(u):
+            max_matching += 1
+
+    return max_matching
+
+def has_disjoint_path_cover(n, m, k, edges):
+    # Build the graph as adjacency list
+    graph = defaultdict(list)
+    for u, v in edges:
+        graph[u].append(v)
+
+    # Find the maximum bipartite matching
+    max_matching = bipartite_matching(graph, n)
+
+    # Calculate the size of the disjoint path cover
+    # Path cover size = n - max_matching
+    path_cover_size = n - max_matching
+
+    # Check if the path cover size is at most k
+    return path_cover_size <= k
+
+def main():
+    # Input
+    n, m = map(int, input().split())  # Number of vertices and edges
+    k = int(input())                 # Maximum allowed size of disjoint path cover
+    edges = []
+    for _ in range(m):
+        u, v = map(int, input().split())
+        edges.append((u, v))
+
+    # Solve the problem
+    if has_disjoint_path_cover(n, m, k, edges):
+        print("YES")
+    else:
+        print("NO")
+
+if __name__ == "__main__":
+    main()
+
+------------------------------------------------------------------------------------------
+week-8
+
+practise prog ass-1
+
+
+from collections import deque
+
+# BFS function to find the augmenting path
+def bfs(capacity, source, sink, parent):
+    visited = set()
+    queue = deque([source])
+    visited.add(source)
+    
+    while queue:
+        u = queue.popleft()
+        
+        # Traverse all neighbors of u
+        for v in capacity[u]:
+            # If v is not visited and has remaining capacity
+            if v not in visited and capacity[u][v] > 0:
+                queue.append(v)
+                visited.add(v)
+                parent[v] = u
+                
+                if v == sink:
+                    return True
+    return False
+
+# Edmonds-Karp function to compute the maximum flow
+def edmonds_karp(capacity, source, sink):
+    parent = {}
+    max_flow = 0
+    
+    # Keep augmenting the flow while there is an augmenting path
+    while bfs(capacity, source, sink, parent):
+        path_flow = float('Inf')
+        s = sink
+        
+        # Find the maximum flow through the path found by BFS
+        while s != source:
+            path_flow = min(path_flow, capacity[parent[s]][s])
+            s = parent[s]
+        
+        # Update residual capacities of the edges and reverse edges along the path
+        v = sink
+        while v != source:
+            u = parent[v]
+            capacity[u][v] -= path_flow
+            capacity[v][u] += path_flow
+            v = parent[v]
+        
+        max_flow += path_flow
+    
+    return max_flow
+
+# Main function
+def max_flow(E, edges):
+    # Initialize the capacity graph
+    capacity = {chr(i): {} for i in range(ord('A'), ord('P')+1)}
+    capacity['S'] = {}
+    capacity['T'] = {}
+    
+    # Populate the capacity graph
+    for u, v, w in edges:
+        capacity[u][v] = w
+        if v not in capacity:
+            capacity[v] = {}
+        if u not in capacity[v]:
+            capacity[v][u] = 0  # Initialize reverse edge capacity to 0
+    
+    # Call Edmonds-Karp to compute maximum flow from S to T
+    return edmonds_karp(capacity, 'S', 'T')
+
+# Read input and process the test case
+E = int(input())  # number of edges
+edges = []
+
+for _ in range(E):
+    u, v, w = input().split()
+    edges.append((u, v, int(w)))
+
+# Output the maximum flow
+print(max_flow(E, edges))
+
+
+--------------------------------------------------------------------------------------
+week-7
+
+practise prog ass-1
+
+class UnionFind:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.rank = [0] * n
+
+    def find(self, x):
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])  # Path compression
+        return self.parent[x]
+
+    def union(self, x, y):
+        rootX = self.find(x)
+        rootY = self.find(y)
+        
+        if rootX != rootY:
+            # Union by rank
+            if self.rank[rootX] > self.rank[rootY]:
+                self.parent[rootY] = rootX
+            elif self.rank[rootX] < self.rank[rootY]:
+                self.parent[rootX] = rootY
+            else:
+                self.parent[rootY] = rootX
+                self.rank[rootX] += 1
+            return True
+        return False
+
+def kruskal(n, edges):
+    # Sort edges by weight
+    edges.sort(key=lambda x: x[2])  # x[2] is the weight of the edge
+    
+    uf = UnionFind(n)
+    mst_weight = 0
+    mst_edges = 0
+    
+    for u, v, weight in edges:
+        if uf.union(u-1, v-1):  # Union the cities (nodes)
+            mst_weight += weight
+            mst_edges += 1
+            if mst_edges == n - 1:  # We have added n-1 edges, tree is complete
+                break
+    
+    return mst_weight
+
+def solve():
+    t = int(input())  # Number of test cases
+    for _ in range(t):
+        n, m = map(int, input().split())  # n nodes, m edges
+        edges = []
+        for _ in range(m):
+            u, v, w = map(int, input().split())
+            edges.append((u, v, w))
+        
+        # Get the minimum spanning tree's total weight
+        result = kruskal(n, edges)
+        print(result)
+
+# Example usage:
+solve()
+-------------------------------------------------------------------------------------------
+week-6
+
+practise prog ass-1
+
+from collections import deque
+import sys
+input = sys.stdin.read
+
+def find_min_distance(grid, n, m):
+    # Create a list of all empty seats
+    empty_seats = [(i, j) for i in range(n) for j in range(m) if grid[i][j] == 0]
+    
+    # If there are less than 2 empty seats, return -1
+    if len(empty_seats) < 2:
+        return -1
+
+    # Sort the empty seats to minimize iteration
+    empty_seats.sort()
+
+    # Initialize the minimum distance to infinity
+    min_distance = float('inf')
+
+    # Iterate over all pairs of empty seats
+    for i in range(len(empty_seats)):
+        for j in range(i + 1, len(empty_seats)):
+            x1, y1 = empty_seats[i]
+            x2, y2 = empty_seats[j]
+            # Calculate Manhattan distance
+            distance = abs(x1 - x2) + abs(y1 - y2)
+            # Update minimum distance
+            min_distance = min(min_distance, distance)
+
+            # Break early if the distance becomes 1 (minimum possible)
+            if min_distance == 1:
+                return 1
+
+    return min_distance
+
+def main():
+    data = input().splitlines()
+    T = int(data[0])  # Number of test cases
+    results = []
+    index = 1
+
+    for _ in range(T):
+        # Read dimensions
+        n, m = map(int, data[index].split())
+        index += 1
+
+        # Read the grid
+        grid = []
+        for i in range(n):
+            grid.append(list(map(int, data[index].split())))
+            index += 1
+
+        # Find the minimum Manhattan distance
+        results.append(find_min_distance(grid, n, m))
+    
+    # Output results
+    sys.stdout.write("\n".join(map(str, results)) + "\n")
+
+if __name__ == "__main__":
+    main()
+
+practise prog ass-2
+
+def can_achieve_shortest_path_length(n, m, L, s, t, edges):
+    """
+    Determine if it's possible to assign weights to erased edges to achieve a shortest path of length L
+    
+    Args:
+        n: Number of vertices
+        m: Number of edges
+        L: Desired shortest path length
+        s: Starting vertex
+        t: Ending vertex
+        edges: List of edges (u, v, w) where w=0 means weight is erased
+        
+    Returns:
+        Boolean indicating if the desired shortest path length can be achieved
+    """
+    # Identify edges with known weights and edges with erased weights
+    known_edges = []
+    erased_edges = []
+    
+    # Store edges in appropriate lists
+    for u, v, w in edges:
+        if w > 0:
+            known_edges.append((u, v, w))
+        else:
+            erased_edges.append((u, v))
+    
+    # Build adjacency list for the graph
+    graph = [[] for _ in range(n)]
+    for u, v, w in known_edges:
+        graph[u].append((v, w))
+        graph[v].append((u, w))
+    
+    # Run Dijkstra's algorithm to find shortest path using only known edge weights
+    import heapq
+    distance = [float('inf')] * n
+    distance[s] = 0
+    priority_queue = [(0, s)]
+    visited = [False] * n
+    
+    while priority_queue:
+        dist, node = heapq.heappop(priority_queue)
+        
+        if visited[node]:
+            continue
+        
+        visited[node] = True
+        
+        if node == t:
+            break
+            
+        for neighbor, weight in graph[node]:
+            if not visited[neighbor] and distance[node] + weight < distance[neighbor]:
+                distance[neighbor] = distance[node] + weight
+                heapq.heappush(priority_queue, (distance[neighbor], neighbor))
+    
+    # If shortest path is already <= L using only known edges, we can't increase it
+    if distance[t] <= L:
+        # If equal to L, we're done
+        if distance[t] == L:
+            return True
+        # If less than L, we can't make it longer without changing known weights
+        return False
+    
+    # If t is unreachable with just known edges, we need to check if we can create a path
+    # with erased edges that has total length L
+    
+    # Build a new graph that includes all edges (known and erased)
+    full_graph = [[] for _ in range(n)]
+    for u, v, w in known_edges:
+        full_graph[u].append((v, w))
+        full_graph[v].append((u, w))
+    
+    for u, v in erased_edges:
+        # Add erased edges with weight 1 (minimum possible weight)
+        full_graph[u].append((v, 1))
+        full_graph[v].append((u, 1))
+    
+    # Run BFS to find the shortest path in terms of number of edges
+    from collections import deque
+    
+    # Stores (node, distance, edges_used)
+    queue = deque([(s, 0, 0)])
+    visited = [False] * n
+    
+    # Track shortest path in terms of edges count
+    min_edges_path = None
+    
+    while queue:
+        node, dist, edges_used = queue.popleft()
+        
+        if visited[node]:
+            continue
+            
+        visited[node] = True
+        
+        if node == t:
+            min_edges_path = (dist, edges_used)
+            break
+            
+        for neighbor, weight in full_graph[node]:
+            if not visited[neighbor]:
+                if weight == 1:  # This is an erased edge
+                    queue.append((neighbor, dist + 1, edges_used + 1))
+                else:
+                    queue.append((neighbor, dist + weight, edges_used))
+    
+    # If t is still unreachable even with erased edges, return False
+    if min_edges_path is None:
+        return False
+    
+    # min_edges_path[0] is the current shortest path with all erased edges having weight 1
+    # If this is already > L, we can't make it shorter
+    if min_edges_path[0] > L:
+        return False
+        
+    # We can assign weights to erased edges to make the shortest path exactly L
+    # This is possible if L - (current_min_distance) <= 10^9 * (number of erased edges used in path)
+    # Since we can make any erased edge up to 10^9
+    path_dist, used_erased_edges = min_edges_path
+    remaining_length = L - path_dist
+    
+    # We can add remaining_length to erased edges used in the path
+    return remaining_length >= 0
+
+def main():
+    # Parse input
+    n, m, L, s, t = map(int, input().split())
+    edges = []
+    for _ in range(m):
+        u, v, w = map(int, input().split())
+        edges.append((u, v, w))
+    
+    # Check if it's possible to achieve the desired shortest path length
+    if can_achieve_shortest_path_length(n, m, L, s, t, edges):
+        print("YES")
+    else:
+        print("NO")
+
+if __name__ == "__main__":
+    main()
+
+------------------------------------------------------------------------------------------
+week-5
+
+practise prog ass-1
+
+def find_min_groups(n, parents):
+    # Create an adjacency list representation of the forest
+    tree = [[] for _ in range(n + 1)]
+    roots = []
+
+    for i in range(1, n + 1):
+        p = parents[i - 1]
+        if p == -1:
+            roots.append(i)  # Identify root nodes
+        else:
+            tree[p].append(i)  # Add child to parent in adjacency list
+
+    # Function to calculate the height of a tree using DFS
+    def calculate_height(node):
+        height = 0
+        for child in tree[node]:
+            height = max(height, calculate_height(child))
+        return height + 1
+
+    # Find the maximum height among all trees
+    max_height = 0
+    for root in roots:
+        max_height = max(max_height, calculate_height(root))
+
+    return max_height
+
+def main():
+    import sys
+    input = sys.stdin.read
+    data = input().splitlines()
+
+    # Number of vertices
+    n = int(data[0])
+
+    # Parent list
+    parents = list(map(int, data[1:]))
+
+    # Compute the minimum number of groups
+    result = find_min_groups(n, parents)
+    print(result)
+
+if __name__ == "__main__":
+    main()
+
+practise prog ass-2
+
+import sys
+sys.setrecursionlimit(1 << 25)
+
+def solve():
+    n = int(input())
+    tree = [[] for _ in range(n + 1)]
+    for _ in range(n - 1):
+        a, b = map(int, input().split())
+        tree[a].append(b)
+        tree[b].append(a)
+
+    v = list(map(int, input().split()))
+    d = list(map(int, input().split()))
+    
+    result = []
+    
+    def dfs(u, parent, depth, flip_even, flip_odd):
+        current_value = v[u-1]
+        # Apply flips
+        if depth % 2 == 0:
+            if flip_even % 2 != 0:
+                current_value ^= 1
+        else:
+            if flip_odd % 2 != 0:
+                current_value ^= 1
+
+        if current_value != d[u-1]:
+            result.append(u)
+            if depth % 2 == 0:
+                flip_even += 1
+            else:
+                flip_odd += 1
+
+        for v_child in tree[u]:
+            if v_child != parent:
+                dfs(v_child, u, depth + 1, flip_even, flip_odd)
+
+    dfs(1, 0, 0, 0, 0)
+    print(len(result))
+
+# Run the function
+solve()
+--------------------------------------------------------------------------------------------
+
+week-4
+
+practise prog ass-1
+
+def solve_cube_painting_online(queries):
+    # We'll use a list to keep track of colors in the row
+    row = []
+    
+    # Process each query
+    for query in queries:
+        if query[0] == 1:
+            # Type 1: Add a cube with color X to the end
+            color = query[1]
+            row.append(color)
+        
+        elif query[0] == 2:
+            # Type 2: Repaint all cubes of color X to color Y
+            color_from = query[1]
+            color_to = query[2]
+            
+            # Update all instances of color_from to color_to
+            for i in range(len(row)):
+                if row[i] == color_from:
+                    row[i] = color_to
+    
+    return row
+
+def solve_cube_painting_offline(queries):
+    # For offline approach, we need to identify the final color of each position
+    
+    # First, identify positions where cubes are added
+    positions = []
+    for query in queries:
+        if query[0] == 1:
+            positions.append(query[1])  # Original color
+    
+    # Now, trace the color transformations by applying all Type 2 queries
+    # Start with original colors and apply transformations in order
+    final_colors = positions.copy()
+    
+    for query in queries:
+        if query[0] == 2:
+            color_from, color_to = query[1], query[2]
+            
+            # Apply this transformation to all cubes
+            for i in range(len(final_colors)):
+                if final_colors[i] == color_from:
+                    final_colors[i] = color_to
+    
+    return final_colors
+
+def main():
+    # Read input
+    try:
+        Q = int(input())
+        queries = []
+        
+        for _ in range(Q):
+            query_str = input().strip()
+            query_parts = list(map(int, query_str.split()))
+            queries.append(query_parts)
+        
+        # Choose method - since online approach is correct, we'll use that
+        result = solve_cube_painting_online(queries)
+        print(*result)
+        
+    except ValueError as e:
+        # Handle any input format errors
+        print(f"Input error: {e}")
+        print("Please ensure the first line contains the number of queries (Q),")
+        print("followed by Q lines with queries in the format '1 X' or '2 X Y'")
+
+if __name__ == "__main__":
+    main()
+
+practise prog ass-2
+
+def find_cycle_sizes(n, permutation):
+    # Create an array to store the size of the cycle for each element
+    cycle_sizes = [0] * n
+    visited = [False] * n
+    
+    for i in range(n):
+        if not visited[i]:
+            # Start a new cycle
+            cycle_length = 0
+            current = i
+            
+            # Trace the cycle
+            while not visited[current]:
+                visited[current] = True
+                cycle_length += 1
+                current = permutation[current] - 1  # Move to the next element in the cycle
+            
+            # Assign the cycle length to all elements in the cycle
+            current = i
+            while True:
+                cycle_sizes[current] = cycle_length
+                current = permutation[current] - 1
+                if current == i:
+                    break
+    
+    return cycle_sizes
+
+def main():
+    # Read input
+    T = int(input().strip())
+    results = []
+    
+    for _ in range(T):
+        n = int(input().strip())
+        permutation = list(map(int, input().strip().split()))
+        
+        # Get the cycle sizes
+        result = find_cycle_sizes(n, permutation)
+        
+        # Format the result as a string
+        results.append(" ".join(map(str, result)) + " ")
+    
+    # Print all results with exact spacing
+    print("\n".join(results))
+
+if __name__ == "__main__":
+    main()
+
+---------------------------------------------------------------------------------------
+
+week-3
+practise prog ass-1
+
+def solve_test_case():
+    # Read N and Q
+    N, Q = map(int, input().split())
+    
+    # Read the schedule
+    schedule = list(map(int, input().split()))
+    
+    # Create a dictionary to store the positions of each stop
+    stop_positions = {}
+    for i, stop in enumerate(schedule):
+        if stop not in stop_positions:
+            stop_positions[stop] = []
+        stop_positions[stop].append(i)
+    
+    # Process queries
+    count = 0
+    for _ in range(Q):
+        start, end = map(int, input().split())
+        
+        # If either start or end stop is not in schedule, passenger can't use taxi
+        if start not in stop_positions or end not in stop_positions:
+            continue
+        
+        # Check if there exists a path from start to end
+        # We need to find if there's a position of end stop that comes after
+        # any position of start stop
+        can_use = False
+        for start_pos in stop_positions[start]:
+            for end_pos in stop_positions[end]:
+                if end_pos > start_pos:
+                    can_use = True
+                    break
+            if can_use:
+                break
+        
+        if can_use:
+            count += 1
+    
+    return count
+
+def main():
+    # Read number of test cases
+    T = int(input())
+    
+    # Process each test case
+    for _ in range(T):
+        result = solve_test_case()
+        print(result)
+
+if __name__ == "__main__":
+    main()
+
+
+practise prog ass-2 
+
+def can_win(curr_player_cards, other_player_cards, prev_num=-1, memo=None):
+    if memo is None:
+        memo = {}
+    
+    # Create a state key that includes current cards, other cards, and previous number
+    state = (tuple(sorted(curr_player_cards)), tuple(sorted(other_player_cards)), prev_num)
+    
+    if state in memo:
+        return memo[state]
+    
+    # If current player has no valid moves (no cards greater than prev_num), they lose
+    valid_moves = [card for card in curr_player_cards if card > prev_num]
+    if not valid_moves:
+        memo[state] = False
+        return False
+    
+    # Try each valid move
+    curr_player_cards = list(curr_player_cards)  # Convert to list for modification
+    for card in valid_moves:
+        # Remove the card from current player's cards
+        new_curr_cards = curr_player_cards.copy()
+        new_curr_cards.remove(card)
+        
+        # If opponent can't win after this move, current player wins
+        if not can_win(other_player_cards, new_curr_cards, card, memo):
+            memo[state] = True
+            return True
+    
+    # If no winning move was found, current player loses
+    memo[state] = False
+    return False
+
+def solve_test_case():
+    n = int(input())
+    ankita_cards = list(map(int, input().split()))
+    m = int(input())
+    biswas_cards = list(map(int, input().split()))
+    
+    # Case 1: Ankita starts
+    result1 = can_win(tuple(ankita_cards), tuple(biswas_cards))
+    print("Ankita" if result1 else "Biswas")
+    
+    # Case 2: Biswas starts
+    result2 = can_win(tuple(biswas_cards), tuple(ankita_cards))
+    print("Biswas" if result2 else "Ankita")
+
+def main():
+    t = int(input())  # number of test cases
+    for _ in range(t):
+        solve_test_case()
+
+if __name__ == "__main__":
+    main()
+
+------------------------------------------------------------------------------------
+week-2
+practise prog ass-1
+
+def can_arrange_photo(N, X, heights):
+    # Sort heights in ascending order
+    heights.sort()
+    
+    # Check if back row people can be at least X units taller than front row
+    # Back row will be the last N people (taller ones)
+    # Front row will be the first N people (shorter ones)
+    for i in range(N):
+        # Compare i-th person from front (index i) 
+        # with i-th person from back (index N+i)
+        if heights[N + i] - heights[i] < X:
+            return False
+    return True
+
+def main():
+    # Read number of test cases
+    t = int(input())
+    
+    # Process each test case
+    for _ in range(t):
+        # Read N and X
+        N, X = map(int, input().split())
+        
+        # Read heights
+        heights = list(map(int, input().split()))
+        
+        # Check if arrangement is possible
+        result = can_arrange_photo(N, X, heights)
+        
+        # Print result
+        print("YES" if result else "NO")
+
+if __name__ == "__main__":
+    main()
+
+practise prog ass-2
+
+def solve_test_case():
+    # Read N and Q
+    N, Q = map(int, input().split())
+    
+    # Read the number of Maggi packets in each box
+    boxes = list(map(int, input().split()))
+    
+    # Sort boxes in descending order for greedy approach
+    boxes.sort(reverse=True)
+    
+    # Precompute prefix sums for faster query processing
+    prefix_sums = [0] * (N + 1)
+    for i in range(N):
+        prefix_sums[i + 1] = prefix_sums[i] + boxes[i]
+    
+    # Process each query
+    for _ in range(Q):
+        target = int(input())
+        
+        # If target is greater than total sum, it's impossible
+        if target > prefix_sums[N]:
+            print(-1)
+            continue
+        
+        # Binary search to find minimum number of boxes needed
+        left, right = 1, N
+        result = -1
+        
+        while left <= right:
+            mid = (left + right) // 2
+            if prefix_sums[mid] >= target:
+                result = mid
+                right = mid - 1
+            else:
+                left = mid + 1
+        
+        print(result)
+
+def main():
+    # Read number of test cases
+    T = int(input())
+    
+    # Process each test case
+    for _ in range(T):
+        solve_test_case()
+
+if __name__ == "__main__":
+    main()
+
+--------------------------------------------------------------------------------------------
+week -1
+practise prog ass-1
+
+def get_max_score(n):
+    if n <= 2:
+        return n - 1
+    
+    # dp[i] represents the maximum score possible for a stack of size i
+    dp = [0] * (n + 1)
+    dp[2] = 1
+    
+    # Fill dp table for all sizes from 3 to n
+    for size in range(3, n + 1):
+        # For larger numbers, we can optimize by considering
+        # splits near the middle, as they tend to give better results
+        left = size // 3
+        right = (size + 1) // 2
+        
+        max_score = 0
+        for split in range(left, right + 1):
+            # When we split size into split and (size-split):
+            current_score = (split * (size - split) + 
+                           dp[split] + 
+                           dp[size - split])
+            max_score = max(max_score, current_score)
+        dp[size] = max_score
+    
+    return dp[n]
+
+def main():
+    # Read number of test cases
+    T = int(input())
+    
+    # Process each test case
+    for _ in range(T):
+        N = int(input())
+        result = get_max_score(N)
+        print(result)
+
+if __name__ == "__main__":
+    main()
+
+practise prog ass-2
+
+def will_visit_all_cups(n):
+    """
+    Determine if fly will visit all cups.
+    The positions visited by the fly form a cycle.
+    For n cups, we need to check if this cycle covers all positions.
+    """
+    if n == 1:
+        return True
+        
+    # For n cups, at minute k, the fly jumps k positions
+    # The position after k minutes will be: (1 + 2 + ... + k) % n
+    # If n is odd, it won't visit all positions
+    # If n is even, it definitely won't visit all positions
+    # This is because the sum of the sequence will always be even after a point
+    
+    return False
+
+def main():
+    # Read number of cups
+    n = int(input())
+    
+    # Check if fly will visit all cups
+    result = will_visit_all_cups(n)
+    
+    # Print result
+    print("YES" if result else "NO")
+
+if __name__ == "__main__":
+    main()
