@@ -1,0 +1,135 @@
+readers-writers problem using semaphores and shared memory
+
+producer.c(writers)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
+#include <unistd.h>
+
+#define SHM_KEY 0x1234
+#define SEM_KEY 0x5678
+#define BUFFER_SIZE 10
+
+typedef struct {
+    int buffer[BUFFER_SIZE];
+    int in, out, count;
+    int read_count;
+} shared_data;
+
+void sem_wait(int semid, int semnum) {
+    struct sembuf op = {semnum, -1, 0};
+    semop(semid, &op, 1);
+}
+void sem_signal(int semid, int semnum) {
+    struct sembuf op = {semnum, 1, 0};
+    semop(semid, &op, 1);
+}
+
+int main() {
+    int shmid = shmget(SHM_KEY, sizeof(shared_data), IPC_CREAT | 0666);
+    if (shmid == -1) { perror("shmget"); exit(1); }
+    shared_data *data = (shared_data *)shmat(shmid, NULL, 0);
+    if (data == (void *)-1) { perror("shmat"); exit(1); }
+
+    int semid = semget(SEM_KEY, 4, IPC_CREAT | 0666);
+    if (semid == -1) { perror("semget"); exit(1); }
+    // sem[0]: mutex (for read_count)
+    // sem[1]: wrt (writer lock)
+    // sem[2]: empty (producer)
+    // sem[3]: full (consumer)
+
+    // Initialize only if first run
+    semctl(semid, 0, SETVAL, 1); // mutex
+    semctl(semid, 1, SETVAL, 1); // wrt
+    semctl(semid, 2, SETVAL, BUFFER_SIZE); // empty
+    semctl(semid, 3, SETVAL, 0); // full
+    data->in = data->out = data->count = data->read_count = 0;
+
+    for (int i = 1; i <= 20; i++) {
+        sem_wait(semid, 2); // wait empty
+        sem_wait(semid, 1); // wrt (writer lock)
+        // Writing
+        data->buffer[data->in] = i;
+        data->in = (data->in + 1) % BUFFER_SIZE;
+        data->count++;
+        printf("Writer produced: %d\n", i);
+        sem_signal(semid, 1); // wrt
+        sem_signal(semid, 3); // signal full
+        sleep(1);
+    }
+
+    shmdt(data);
+    return 0;
+}
+------------------------------------------------------------------------------------------------------------------------------------
+consumer.c(readers)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
+#include <unistd.h>
+
+#define SHM_KEY 0x1234
+#define SEM_KEY 0x5678
+#define BUFFER_SIZE 10
+
+typedef struct {
+    int buffer[BUFFER_SIZE];
+    int in, out, count;
+    int read_count;
+} shared_data;
+
+void sem_wait(int semid, int semnum) {
+    struct sembuf op = {semnum, -1, 0};
+    semop(semid, &op, 1);
+}
+void sem_signal(int semid, int semnum) {
+    struct sembuf op = {semnum, 1, 0};
+    semop(semid, &op, 1);
+}
+
+int main() {
+    int shmid = shmget(SHM_KEY, sizeof(shared_data), 0666);
+    if (shmid == -1) { perror("shmget"); exit(1); }
+    shared_data *data = (shared_data *)shmat(shmid, NULL, 0);
+    if (data == (void *)-1) { perror("shmat"); exit(1); }
+
+    int semid = semget(SEM_KEY, 4, 0666);
+    if (semid == -1) { perror("semget"); exit(1); }
+
+    for (int i = 1; i <= 20; i++) {
+        sem_wait(semid, 3); // wait full
+
+        // Readers-Writers entry section
+        sem_wait(semid, 0); // mutex
+        data->read_count++;
+        if (data->read_count == 1)
+            sem_wait(semid, 1); // wrt (block writers)
+        sem_signal(semid, 0); // mutex
+
+        // Reading
+        int item = data->buffer[data->out];
+        printf("Reader consumed: %d\n", item);
+
+        // Readers-Writers exit section
+        sem_wait(semid, 0); // mutex
+        data->read_count--;
+        if (data->read_count == 0)
+            sem_signal(semid, 1); // wrt (allow writers)
+        sem_signal(semid, 0); // mutex
+
+        // Producer-Consumer section
+        data->out = (data->out + 1) % BUFFER_SIZE;
+        data->count--;
+        sem_signal(semid, 2); // signal empty
+        sleep(2);
+    }
+
+    shmdt(data);
+    return 0;
+}
